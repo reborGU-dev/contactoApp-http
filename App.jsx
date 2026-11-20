@@ -23,11 +23,12 @@ import InfoScreen from './src/screens/InfoScreen';
 import HelpScreen from './src/screens/HelpScreen';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { ContactsProvider } from './src/context/ContactsContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Navegación inferior
+// navegacion inferior
 function Tabs() {
   const { colors } = useTheme();
 
@@ -97,7 +98,7 @@ function Tabs() {
   );
 }
 
-// Contenedor principal que consume el tema global
+// contendor principal que consume el tema global
 function AppContent() {
   const { colors, isDarkMode } = useTheme();
 
@@ -175,7 +176,9 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AppContent />
+        <ContactsProvider>
+          <AppContent />
+        </ContactsProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

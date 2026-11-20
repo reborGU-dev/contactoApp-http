@@ -13,7 +13,8 @@ export const themes = {
     inactive: '#8E8E93',
     input: '#FFFFFF',
     card: '#FFFFFF',
-    danger: '#DC2626'
+    danger: '#DC2626',
+    secondary: '#8E8E93',
   },
 
   dark: {
@@ -25,7 +26,8 @@ export const themes = {
     inactive: '#AAAAAA',
     input: '#2A2A2A',
     card: '#1E1E1E',
-    danger: '#FF453A'
+    danger: '#FF453A',
+    secondary: '#AAAAAA'
   },
 };
 

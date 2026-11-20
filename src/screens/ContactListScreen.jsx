@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
 import {
   View,
@@ -8,18 +8,17 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
-
-import { useFocusEffect } from '@react-navigation/native';
 
 import ContactCard from '../components/ContactCard';
 import HeaderMenu from '../components/HeaderMenu';
 
-import { getContacts } from '../data/contact';
+import { useContacts } from '../context/ContactsContext';
 import { globalStyles } from '../styles/globalStyles';
 import { useTheme } from '../context/ThemeContext';
 
-// ignorar mayúsculas y acentos
+// ignorar mayusculas y acentos
 const normalizeText = (text) => {
   return String(text ?? '')
     .toLowerCase()
@@ -33,15 +32,9 @@ export default function ContactListScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
-  const [list, setList] = useState([]);
+  // contactos y estado del GET 
+  const { contacts: list, status, error, loadContacts } = useContacts();
   const [search, setSearch] = useState('');
-
-  // Actualizar contactos al regresar a la pantalla
-  useFocusEffect(
-    useCallback(() => {
-      setList(getContacts());
-    }, [])
-  );
 
   // filtrar contactos 
   const filteredContacts = useMemo(() => {
@@ -74,16 +67,16 @@ export default function ContactListScreen({ navigation }) {
 
     <View style={styles.container}>
 
-      {/* Menú principal */}
+      {/* menu principal */}
       <View style={styles.headerContainer}>
         <HeaderMenu />
       </View>
 
-      {/* Barra de búsqueda */}
+      {/* barra de busqueda */}
       <View style={styles.searchContainer}>
 
         <Text style={styles.searchIcon}>
-          🔍
+          
         </Text>
 
         <TextInput
@@ -107,7 +100,7 @@ export default function ContactListScreen({ navigation }) {
 
       </View>
 
-      {/* Lista de contactos */}
+      {/* lista de contactos */}
       <FlatList
         data={filteredContacts}
         keyExtractor={(contact) => contact.id}
@@ -125,11 +118,34 @@ export default function ContactListScreen({ navigation }) {
         )}
         ListEmptyComponent={
 
-          <Text style={styles.empty}>
-            {search.trim()
-              ? 'No se encontraron contactos.'
-              : 'No hay contactos.'}
-          </Text>
+          status === 'loading' ? (
+
+            // cargando
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.empty}>Cargando contactos...</Text>
+            </View>
+
+          ) : status === 'error' ? (
+
+            // error en la peticion
+            <View style={styles.centered}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Pressable style={styles.retryButton} onPress={loadContacts}>
+                <Text style={styles.retryText}>Reintentar</Text>
+              </Pressable>
+            </View>
+
+          ) : (
+
+            // sin contactos
+            <Text style={styles.empty}>
+              {search.trim()
+                ? 'No se encontraron contactos.'
+                : 'No hay contactos.'}
+            </Text>
+
+          )
 
         }
         contentContainerStyle={styles.list}
@@ -202,6 +218,31 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 30,
     fontSize: 15,
     color: colors.secondary,
+  },
+
+  centered: {
+    alignItems: 'center',
+    marginTop: 30,
+  },
+
+  errorText: {
+    textAlign: 'center',
+    fontSize: 15,
+    color: colors.danger,
+    marginBottom: 12,
+  },
+
+  retryButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+
+  retryText: {
+    color: colors.primary,
+    fontWeight: '600',
   },
 
 });

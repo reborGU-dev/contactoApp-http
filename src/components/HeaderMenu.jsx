@@ -23,7 +23,7 @@ export default function HeaderMenu() {
 
       <Modal visible={visible} transparent={true} animationType="fade">
         <View style={styles.overlay}>
-          {/* El Pressable vacío actúa como botón para cerrar al tocar el fondo oscuro */}
+          {/* El Pressable vacio actua como btn para cerrar al tocar el fondo oscuro */}
           <Pressable style={styles.backgroundTouchable} onPress={() => setVisible(false)} />
           
           <View style={styles.menu}>

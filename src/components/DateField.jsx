@@ -12,7 +12,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DateField({
   label,
@@ -22,6 +22,12 @@ export default function DateField({
   const { colors, isDarkMode } = useTheme();
   const styles = createStyles(colors);
   const [showPicker, setShowPicker] = useState(false);
+
+  // Fecha de hoy (YYYY-MM-DD) para limitar el maximo en web
+  const hoy = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
 
   const fechaInicial = value
     ? new Date(`${value}T12:00:00`)
@@ -47,6 +53,39 @@ export default function DateField({
     }
   };
 
+  // WEB: el navegador trae su propio selector de fecha 
+  // ll valor ya viene como YYYY-MM-DD, el mismo formato que usa la app
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>
+          {label}
+        </Text>
+
+        {React.createElement('input', {
+          type: 'date',
+          value: value || '',
+          max: hoy,
+          onChange: (e) => onChange(e.target.value),
+          style: {
+            height: 45,
+            boxSizing: 'border-box',
+            width: '100%',
+            padding: '0 12px',
+            fontSize: 14,
+            fontFamily: 'inherit',
+            color: colors.text,
+            backgroundColor: colors.input,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 11,
+            colorScheme: isDarkMode ? 'dark' : 'light',
+          },
+        })}
+      </View>
+    );
+  }
+
+  // ANDROID  selector nativo
   return (
     <View style={styles.container}>
       <Text style={styles.label}>
@@ -85,7 +124,7 @@ export default function DateField({
           }
           maximumDate={new Date()}
           themeVariant={isDarkMode ? 'dark' : 'light'}
-          textColor={'colors.text'}
+          textColor={colors.text}
           onChange={handleChange}
         />
       )}
@@ -109,7 +148,7 @@ const createStyles = (colors) => StyleSheet.create({
     height: 45,
     backgroundColor: colors.input,
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: colors.border,
     borderRadius: 11,
     paddingHorizontal: 12,
 
@@ -124,6 +163,6 @@ const createStyles = (colors) => StyleSheet.create({
   },
 
   placeholder: {
-    color: colors.placeholder,
+    color: colors.inactive,
   },
 });

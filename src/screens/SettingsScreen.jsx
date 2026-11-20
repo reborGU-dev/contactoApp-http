@@ -32,7 +32,7 @@ export default function SettingsScreen({ route,navigation }) {
     }
   ];
 
-  // Generamos los estilos dinámicamente usando los colores actuales
+  // genera los estilos dinamicos usando los colores actuales
   const styles = createStyles(colors);
 
   return (
@@ -105,7 +105,7 @@ export default function SettingsScreen({ route,navigation }) {
   );
 }
 
-//Función para generar estilos que cambian según el tema activo
+//estilo cambian segun el tema activo
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,

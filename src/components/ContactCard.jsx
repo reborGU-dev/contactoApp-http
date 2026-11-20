@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useTheme, ThemeProvider } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 
 export default function ContactCard({ contact, onPress }) {

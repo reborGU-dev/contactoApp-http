@@ -9,6 +9,7 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import DateField from './DateField';
@@ -21,7 +22,7 @@ export default function ContactForm({
   initialData = {},
 }) {
 
-  // Consumimos el tema global
+  // tema global
   const { colors } = useTheme();
 
   // Estados del formulario
@@ -37,10 +38,12 @@ export default function ContactForm({
     initialData.tipo || CONTACT_TYPES[0]
   );
 
-  // Estilos dinámicos
+  // estilos dinamios
   const styles = createStyles(colors);
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
 
     if (!nombre.trim() || !telefono.trim()) {
       Alert.alert(
@@ -58,24 +61,6 @@ export default function ContactForm({
       return;
     }
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Eliminar contacto',
-      `¿Seguro que quieres eliminar a ${currentContact.nombre}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => {
-            deleteContact(id);
-            navigation.goBack();
-          },
-        },
-      ]
-    );
-  };
-
     const newContact = {
       nombre,
       apellido,
@@ -86,7 +71,15 @@ export default function ContactForm({
       tipo,
     };
 
-    onSaveContact(newContact);
+    //hace peticion http si falla no se guarda el contacto
+    setSaving(true);
+    try{
+      await onSaveContact(newContact);
+    } catch (e) { 
+      Alert.alert('Error', e.message || 'No se pudo guardar el contacto.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -181,12 +174,17 @@ export default function ContactForm({
       </View>
 
       <Pressable
-        style={styles.button}
+        style={[styles.button, saving && styles.buttonDisabled]}
         onPress={handleSave}
-      >
-        <Text style={styles.buttonText}>
-          {buttonLabel}
-        </Text>
+        disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color='#FFFFFF'/>
+          ) : (
+            <Text style={styles.buttonText}>
+              {buttonLabel}
+            </Text>
+          )}
       </Pressable>
 
       
@@ -194,7 +192,7 @@ export default function ContactForm({
   );
 }
 
-// Estilos que cambian según el tema global
+// estilos que cambian segun el tema
 const createStyles = (colors) => StyleSheet.create({
 
   container: {
@@ -259,6 +257,10 @@ const createStyles = (colors) => StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
+  },
+
+  buttonDisabled:{
+    opacity: 0.7,
   },
 
   buttonText: {

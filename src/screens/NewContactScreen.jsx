@@ -1,19 +1,18 @@
 import React from 'react';
 import ContactForm from '../components/ContactForm';
-import { addContact } from '../data/contact';
+import { useContacts } from '../context/ContactsContext';
 
 
 export default function NewContactScreen({ navigation }) {
 
-  const handleSaveContact = (contacto) => {
+  const { addContact } = useContacts();
 
-    // Registrar el contacto en el almacenamiento
-    addContact(contacto);
+  //POST
+  const handleSaveContact = async (contacto) => {
+    // registra el contacto en el almacenamiento
+    await addContact(contacto);
 
-    // Confirmar registro
-    console.log('Contacto registrado correctamente:', contacto);
-
-    // Regresar a la agenda
+    // regresa a la agenda
     navigation.navigate('Home');
   };
 

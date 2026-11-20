@@ -1,9 +1,17 @@
-
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Pressable, Text } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Platform,
+  Pressable,
+  Text,
+  ActivityIndicator,
+} from 'react-native';
 
 import ContactForm from '../components/ContactForm';
-import { getContact, updateContact, deleteContact } from '../data/contact';
+import * as api from '../services/contactsApi';
+import { useContacts } from '../context/ContactsContext';
 import { useTheme } from '../context/ThemeContext';
 import { ScrollView } from 'react-native-gesture-handler';
 
@@ -12,46 +20,90 @@ export default function EditContactScreen({ route, navigation }) {
 
   const { id } = route.params;
   const { colors } = useTheme();
-
+  const { editContact, removeContact } = useContacts();
 
   const [currentContact, setCurrentContact] = useState(null);
-  const [loaded, setLoaded] = useState(false);
+  const [status, setStatus] = useState('loading'); // 'loading' | 'error' | 'success'
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    const contact = getContact(id);
-
-    if (contact) {
+  // GET recarga el formulario para editar al usuario
+  const loadContact = useCallback(async () => {
+    setStatus('loading');
+    setError('');
+    try {
+      const contact = await api.getContact(id);
       setCurrentContact(contact);
+      setStatus('success');
+    } catch (e) {
+      setError(e.message);
+      setStatus('error');
     }
-
-    setLoaded(true);
   }, [id]);
 
-  //actualiza al contacto
-  const handleSave = (data) => {
-    updateContact(id, data);
+  useEffect(() => {
+    loadContact();
+  }, [loadContact]);
+
+  // PUT si falla el formulario muestra la alerta y no se cierra
+  const handleSave = async (data) => {
+    await editContact(id, data);
     navigation.goBack();
   };
+
+  // DELETE 
   const handleDelete = () => {
-    Alert.alert(
-      'Eliminar contacto',
-      `¿Seguro que quieres eliminar a ${currentContact.nombre}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => {
-            deleteContact(id);
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    const titulo = 'Eliminar contacto';
+    const mensaje = `¿Seguro que quieres eliminar a ${currentContact.nombre}?`;
+
+    // hace el DELETE y regresa a la lista
+    const eliminar = async () => {
+      setDeleting(true);
+      try {
+        await removeContact(id);
+        navigation.goBack();
+      } catch (e) {
+        const msg = e.message || 'No se pudo eliminar el contacto.';
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('Error', msg);
+        setDeleting(false);
+      }
+    };
+
+    // en web Alert.alert no funcionaasi que  se usa confirmacion del navegador
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${titulo}\n\n${mensaje}`)) eliminar();
+      return;
+    }
+
+    Alert.alert(titulo, mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Eliminar', style: 'destructive', onPress: eliminar },
+    ]);
   };
   const styles = createStyles(colors);
 
-  if (!loaded || !currentContact) return null;
+  // cargando
+  if (status === 'loading') {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.message}>Cargando contacto...</Text>
+      </View>
+    );
+  }
+
+  // error en la peticion
+  if (status === 'error' || !currentContact) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable style={styles.retryButton} onPress={loadContact}>
+          <Text style={styles.retryText}>Reintentar</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <ScrollView>
@@ -65,12 +117,13 @@ export default function EditContactScreen({ route, navigation }) {
     
     {/* Btn para eliminar usuario (solo sale en esta pantalla) */}
       <Pressable
-        style={styles.deleteButton}
-        onPress={handleDelete}>
+        style={[styles.deleteButton, deleting && styles.deleteDisabled]}
+        onPress={handleDelete}
+        disabled={deleting}>
         
       <Text 
         style={styles.deleteText}> 
-          Eliminar
+          {deleting ? 'Eliminando...' : 'Eliminar'}
       </Text>
       </Pressable>
       </View>
@@ -85,6 +138,37 @@ const createStyles = (colors) => StyleSheet.create({
     padding: 16,
   },
 
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  message: {
+    marginTop: 12,
+    fontSize: 15,
+    color: colors.secondary,
+  },
+
+  errorText: {
+    textAlign: 'center',
+    fontSize: 15,
+    color: colors.danger,
+    marginBottom: 12,
+  },
+
+  retryButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+
+  retryText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
   deleteButton: {
       borderWidth: 1,
       borderColor: colors.danger,
@@ -92,6 +176,9 @@ const createStyles = (colors) => StyleSheet.create({
       borderRadius: 10,
       marginHorizontal: 15,
       alignItems: 'center',
+  },
+  deleteDisabled: {
+      opacity: 0.6,
   },
   deleteText: {
       color: colors.danger,
